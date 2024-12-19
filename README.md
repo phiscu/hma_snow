@@ -5,8 +5,8 @@
 ## Overview
 
 This repository provides a workflow to process the **High Mountain Asia UCLA Daily Snow Reanalysis (HMA-SR)** dataset. It includes:
-1. A Bash script for organizing, mosaicking, and reprojecting data.
-2. A Python script for downloading the data from NSIDC.
+1. A Python script for downloading the data from NSIDC.
+2. A Bash script for organizing, mosaicking, and reprojecting data.
 3. A Python script for post-processing GeoTIFF files to calculate mean SWE time series.
 
 This workflow focuses on **ensemble mean SWE**, but it can be adapted for other variables in the HMA-SR dataset. Please refer to the [original data source](https://nsidc.org/data/HMA_SR_D/versions/1) and the [related publication](https://doi.org/10.1029/2022GL100082) for details on the dataset.
