@@ -1,4 +1,4 @@
-# Snow Water Equivalent Extraction Tool for the HMA Snow Reanalysis Dataset (SWEETR)
+# Snow Water Equivalent Extraction Tool for the HMA Snow Daily Reanalysis (SWEETR)
 
 ## Overview
 
