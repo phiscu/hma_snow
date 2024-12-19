@@ -72,8 +72,10 @@ A Python script calculates aggregated SWE time series for the section of the tar
 ## Output
 
 Returns two outputs:
-1. A directory named `processed` containing `.tif` files of ensemble mean SWE for your catchment with one band per day.
-2. A `.csv` file with daily catchment-wide mean SWE values.
+1. A directory named `processed` containing two types of `.tif` files.
+   - Annual ensemble mean SWE rasters for your catchment with one band per day.
+   - Annual binary masks separating seasonal and non-seasonal snow.
+3. A `.csv` file with daily catchment-wide mean SWE values for the requested study period.
 
 ## Notes
 
