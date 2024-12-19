@@ -98,7 +98,8 @@ Returns two outputs:
 - `matplotlib`
 
 ### Acknowledements
-- The reprojection and some parts of the workflow are adapted from **Simon Gascoin**'s [HMA-Snow-Reanalysis-scripts](https://github.com/sgascoin/HMA-Snow-Reanalysis-scripts).
-
+The reprojection and some parts of the workflow are adapted from **Simon Gascoin**'s [HMA-Snow-Reanalysis-scripts](https://github.com/sgascoin/HMA-Snow-Reanalysis-scripts) repository for his study on the Indus basin:
+  - **Gascoin, S. (2021)** Snowmelt and Snow Sublimation in the Indus Basin. Water, 13(19), 2621. DOI: [10.3390/w13192621]([https://doi.org/10.5067/HNAUGJQXSCV](https://doi.org/10.3390/w13192621)
+  
 ## Author
 **Phillip Schuster** - (https://github.com/phiscu)
