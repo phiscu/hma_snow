@@ -46,13 +46,16 @@ A Python script calculates aggregated SWE time series for the section of the tar
 
 ## Usage
 
-Run the Bash script with required arguments. Example:
+1. Replace the example shapefile in the `shp` directory or provide the path to our shapefile in the next step.
+
+2. Run the Bash script with required arguments. Example:
 ```bash
 ./process_hma_sr.sh --threads ALL_CPUS --catchment "Kyzylsuu" \
     --start_y 1999 --end_y 2016 --projEqArea "+proj=aea ..." \
     --cutline_shp "shp/Catchment_shapefile_new.shp" --SKIP_DOWNLOAD false \
     --CLEANUP true
 ```
+3. Feel free to use the `HMASR_postprocess.py` script as basis for further analysis.
 
 ## Options
 
@@ -65,6 +68,12 @@ Run the Bash script with required arguments. Example:
 - `--SKIP_DOWNLOAD`: Skip downloading data if already present (default: false).
 - `--CLEANUP`: Clean up intermediate files (default: true).
 - `--modules`: Comma-separated list of modules to load (default: `nco,anaconda`). Use an empty value to skip loading modules.
+
+## Output
+
+Returns two outputs:
+1. A directory named `processed` containing `.tif` files of ensemble mean SWE for your catchment with one band per day.
+2. A `.csv` file with daily catchment-wide mean SWE values.
 
 ## Notes
 
