@@ -30,6 +30,7 @@ The Bash script organizes files, reprojects them, and provides catchment-specifi
 A Python script calculates aggregated SWE time series for the section of the target catchment identified as seasonal snow.
 
 ## Requirements
+The tool is designed as a command line application and was developed on Ubuntu 22.04. To use it on other OS than Linux make sure the following dependencies are installed and the paths match the required syntax. For Windows users I recommend the Windows Subsystem for Linux (WSL) which can be installed from the Microsoft store.
 
 ### Tools
 - **GDAL**
