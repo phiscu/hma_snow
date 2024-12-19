@@ -45,7 +45,7 @@ The tool is designed as a command line application and was developed on Ubuntu 2
 
 ## Usage
 
-1. Replace the example shapefile in the `shp` directory or provide the path to our shapefile in the next step.
+1. Replace the example shapefile in the `shp` directory with your catchment's outline or specify the file path using the `--cutline_shp` option.
 
 2. Run the Bash script with required arguments. Example:
 ```bash
@@ -54,14 +54,14 @@ The tool is designed as a command line application and was developed on Ubuntu 2
     --cutline_shp "shp/Catchment_shapefile_new.shp" --SKIP_DOWNLOAD false \
     --CLEANUP true
 ```
-3. Feel free to use the `HMASR_postprocess.py` script as basis for further analysis.
+3. Feel free to use the `HMASR_postprocess.py` script as a basis for further analysis.
 
 ## Options
 
 - `--threads`: Number of threads to use (default: ALL_CPUS).
-- `--catchment`: Name of the catchment (default: Kyzylsuu_final).
+- `--catchment`: Name of the catchment (default: Kyzylsuu).
 - `--start_y`: Start year for the analysis (default: 1999).
-- `--end_y`: End year for the analysis (default: 2000).
+- `--end_y`: End year for the analysis (default: 2016).
 - `--projEqArea`: Projection string (default: Albers Equal Area).
 - `--cutline_shp`: Path to the shapefile for cutline.
 - `--SKIP_DOWNLOAD`: Skip downloading data if already present (default: false).
@@ -78,7 +78,6 @@ Returns two outputs:
 
 ## Notes
 
-- To process data for a custom catchment, provide the catchment's outline as a shapefile and specify the file path using the `--cutline_shp` option.
 - Temporary files may require significant disk space depending on the target area. Ensure sufficient storage is available during processing.
 - The temporal coverage of the dataset is 1999 to 2016.
 
