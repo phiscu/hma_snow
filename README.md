@@ -72,7 +72,7 @@ The tool is designed as a command line application and was developed on Ubuntu 2
 
 Returns two outputs:
 1. A directory named `processed` containing two types of `.tif` files.
-   - Annual ensemble mean SWE rasters for your catchment with one band per day.
+   - Annual ensemble mean SWE rasters for your catchment with one band per day in a 500m spatial resolution.
    - Annual binary masks separating seasonal and non-seasonal snow.
 3. A `.csv` file with daily catchment-wide mean SWE values for the requested study period.
 
