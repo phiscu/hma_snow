@@ -1,6 +1,4 @@
-# High Mountain Asia Daily Snow Reanalysis Processing Workflow
-
-
+# Snow Water Equivalent Extraction Tool for the HMA Snow Reanalysis Dataset (SWEETR)
 
 ## Overview
 
