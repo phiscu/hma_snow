@@ -2,12 +2,24 @@ import pandas as pd
 import rasterio
 import xarray as xr
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import argparse
 
-
 def geotiff2xr(file_path):
+    """
+    Converts a GeoTIFF file produced by HMASR_swe_pipeline.sh into an xarray DataArray.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the GeoTIFF file to be processed.
+
+    Returns
+    -------
+    xarray.DataArray or None
+        DataArray containing the data from the GeoTIFF file, with CRS and transform metadata.
+        Returns None if the file does not contain 'SWE' or 'MASK' in its name.
+    """
     with rasterio.open(file_path) as src:
         data = src.read()
         transform = src.transform
@@ -34,14 +46,47 @@ def geotiff2xr(file_path):
         else:
             return None
 
-
 def select_tif(directory, keyword1, keyword2):
+    """
+    Selects GeoTIFF files from a directory based on keywords.
+
+    Parameters
+    ----------
+    directory : str
+        Path to the directory containing GeoTIFF files.
+    keyword1 : str
+        First keyword to match in the file names.
+    keyword2 : str
+        Second keyword to match in the file names.
+
+    Returns
+    -------
+    list
+        List of file paths matching the specified keywords.
+    """
     specific_tif_files = [os.path.join(directory, file) for file in os.listdir(directory)
                           if file.endswith('.tif') and keyword1 in file and keyword2 in file]
     return specific_tif_files
 
-
 def swe_means(input_dir, start_year=1999, end_year=2016):
+    """
+    Computes the catchment-wide mean SWE (Snow Water Equivalent) of all areas classified as 'seasonal snow'
+    in the MASK layer for a given period.
+
+    Parameters
+    ----------
+    input_dir : str
+        Path to the directory containing input GeoTIFF files.
+    start_year : int, optional
+        Start year for the analysis (default: 1999).
+    end_year : int, optional
+        End year for the analysis (default: 2016).
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame containing daily mean SWE values indexed by date.
+    """
     swe_list = []
     years = range(start_year, end_year + 1)
 
@@ -72,9 +117,19 @@ def swe_means(input_dir, start_year=1999, end_year=2016):
 
     return swe_df
 
-
 def main():
-    # Argument parsing
+    """
+    Main function to parse arguments and calculate SWE means from GeoTIFF files.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+    """
+    # Parsed arguments
     parser = argparse.ArgumentParser(description="Calculate SWE means from GeoTIFF files.")
     parser.add_argument("--input_dir", required=True,
                         help="Path to the directory containing the input GeoTIFF files.")
@@ -97,7 +152,5 @@ def main():
 
     print(f"SWE means saved to {args.output_csv}")
 
-
 if __name__ == "__main__":
     main()
-
