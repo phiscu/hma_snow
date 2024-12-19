@@ -83,23 +83,9 @@ Returns two outputs:
 - Temporary files may require significant disk space depending on the target area. Ensure sufficient storage is available during processing.
 - The temporal coverage of the dataset is 1999 to 2016.
 
-## Prerequisites
-
-### Tools
-- **GDAL**
-- **NCO**
-- **parallel**
-
-### Python Libraries
-- `pandas`
-- `rasterio`
-- `xarray`
-- `numpy`
-- `matplotlib`
-
 ### Acknowledements
 The reprojection and some parts of the workflow are adapted from **Simon Gascoin**'s [HMA-Snow-Reanalysis-scripts](https://github.com/sgascoin/HMA-Snow-Reanalysis-scripts) repository for his study on the Indus basin:
-  - **Gascoin, S. (2021)** Snowmelt and Snow Sublimation in the Indus Basin. Water, 13(19), 2621. DOI: [10.3390/w13192621]([https://doi.org/10.5067/HNAUGJQXSCV](https://doi.org/10.3390/w13192621)
+  - **Gascoin, S. (2021)** Snowmelt and Snow Sublimation in the Indus Basin. Water, 13(19), 2621. DOI: [10.3390/w13192621](https://doi.org/10.3390/w13192621)
   
 ## Author
 **Phillip Schuster** - (https://github.com/phiscu)
