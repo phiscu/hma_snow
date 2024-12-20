@@ -2,16 +2,14 @@
 
 ################################################################################
 # Script Name: HMASR_swe_pipeline.sh
-# Description: 
-#   This script processes the High Mountain Asia UCLA Daily Snow Reanalysis datset
-#   Version 1 to derive daily SWE rasters and mean catchment SWE time series for a
-#   specified catchment. It downloads, arranges, mosaicks, and reprojects the original
-#   files and calculates SWE aggregates using an additional Python script.
+# Description:
+#   Processes High Mountain Asia UCLA Daily Snow Reanalysis data to derive
+#   catchment-wide mean SWE time series and optionally generate annual SWE plots.
 #
 # Workflow Overview:
-#   1. Data Download: Uses a Python script to download data from the NSIDC.
-#   2. Data Processing: Organizes, reprojects, and mosaics GeoTIFF files.
-#   3. Post-Processing: Another Python script calculates mean SWE time series.
+#   1. Data Download: Downloads raw data from NSIDC using a Python script.
+#   2. Data Processing: Organizes, mosaics, and reprojects GeoTIFF files.
+#   3. Post-Processing: Calculates mean SWE time series and generates annual SWE plots.
 #
 # Prerequisites:
 #   - A NASA EarthData account is required to download data.
@@ -20,7 +18,7 @@
 #       - GDAL
 #       - NCO
 #       - parallel
-#       - pandas, rasterio, xarray, numpy, matplotlib, argparse
+#       - pandas, rasterio, xarray, numpy, matplotlib, argparse, scienceplots
 #
 # References:
 #   - Original data: Liu, Y., Fang, Y., & Margulis, S. A. (2021).
@@ -38,10 +36,10 @@
 #   - The temporal coverage of the dataset is 1999 to 2016.
 #
 # Usage:
-#   ./process_hma_sr.sh --threads ALL_CPUS --catchment "Kyzylsuu_final" \
-#       --start_y 1999 --end_y 2000 --projEqArea "+proj=aea ..." \
+#   ./HMASR_swe_pipeline.sh --threads ALL_CPUS --catchment "Kyzylsuu_final" \
+#       --start_y 1999 --end_y 2016 --projEqArea "+proj=aea ..." \
 #       --cutline_shp "shp/Catchment_shapefile_new.shp" --SKIP_DOWNLOAD false \
-#       --CLEANUP true
+#       --CLEANUP true --modules "nco,anaconda" --output_fig "/annual_swe.png"
 #
 # Options:
 #   --threads         Number of threads to use (default: ALL_CPUS)
@@ -49,15 +47,16 @@
 #   --start_y         Start year for the analysis (default: 1999)
 #   --end_y           End year for the analysis (default: 2016)
 #   --projEqArea      Projection string (default: Albers Equal Area)
+#   --opt             GDAL compression options (default: COMPRESS=DEFLATE)
 #   --cutline_shp     Path to shapefile for cutline (default: shp/Catchment_shapefile_new.shp)
 #   --SKIP_DOWNLOAD   Skip data download (default: false)
 #   --CLEANUP         Clean up intermediate files (default: true)
-#   --modules         List of modules to load. Use empty value to skip. (default: nco,anaconda)
+#   --modules         Comma-separated list of modules to load.  Use empty value to skip. (default: "nco,anaconda")
+#   --output_fig      Path for saving annual SWE plots. Default: <catchment>_annual_swe.png
 #
 # Author: Phillip Schuster
 # Date: 2024-12-19
 ################################################################################
-
 
 # Default Values
 THREADS="ALL_CPUS"
@@ -70,6 +69,7 @@ cutline_shp="shp/Catchment_shapefile_new.shp"
 SKIP_DOWNLOAD=false
 CLEANUP=true
 modules=("nco" "anaconda") # Default modules
+output_fig=""
 
 # Parse Command-Line Arguments
 while [[ $# -gt 0 ]]; do
@@ -114,6 +114,10 @@ while [[ $# -gt 0 ]]; do
             IFS=',' read -r -a modules <<< "$2"
             shift 2
             ;;
+        --output_fig)
+            output_fig="$2"
+            shift 2
+            ;;
         --help|-h)
             echo "Usage: $0 [OPTIONS]"
             echo
@@ -123,10 +127,12 @@ while [[ $# -gt 0 ]]; do
             echo "  --start_y         Start year for the analysis (default: 1999)"
             echo "  --end_y           End year for the analysis (default: 2016)"
             echo "  --projEqArea      Projection string (default: Albers Equal Area)"
+            echo "  --opt             GDAL compression options (default: COMPRESS=DEFLATE)"
             echo "  --cutline_shp     Path to shapefile for cutline (default: shp/Catchment_shapefile_new.shp)"
             echo "  --SKIP_DOWNLOAD   Skip data download (default: false)"
             echo "  --CLEANUP         Clean up intermediate files (default: true)"
-            echo "  --modules         Comma-separated list of modules to load (default: nco,anaconda). Use empty value to skip." 
+            echo "  --modules         List of modules to load (default: nco,anaconda). Use empty value to skip."
+            echo "  --output_fig      Path for saving annual SWE plots. Default: <catchment>_annual_swe.png"
             echo
             exit 0
             ;;
@@ -137,6 +143,11 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Default output figure path if not specified
+if [[ -z "$output_fig" ]]; then
+    output_fig="${catchment}_annual_swe.png"
+fi
 
 # Load required modules if specified
 if [[ ${#modules[@]} -gt 0 ]]; then
@@ -183,7 +194,6 @@ if [[ "${SKIP_DOWNLOAD}" == "false" ]]; then
 else
     echo "Skipping data download as SKIP_DOWNLOAD=true"
 fi
-
 
 # Organize downloaded files
 echo "Organizing downloaded files..."
@@ -259,11 +269,11 @@ done
 
 echo "Processing of .tif files complete. Processed files can be found in: ${processed_dir}"
 
-# Calculate catchment mean SWE timeseries
-echo "Calculating mean SWE time series of the target catchment."
-python HMASR_postprocess.py \
+# Process GeoTIFF files and calculate SWE means
+python3 HMASR_postprocess.py \
     --input_dir "${processed_dir}" \
     --output_csv "${catchment_dir}/${catchment}_mean_swe.csv" \
+    --output_fig "${output_fig}" \
     --start_year ${start_y} \
     --end_year ${end_y}
 
@@ -274,5 +284,5 @@ if [[ ${CLEANUP} == true ]]; then
     echo "Final cleanup complete."
 fi
 
-echo "Processing complete. Final mean SWE of the target catchment ${catchment} is saved in: ${catchment_dir}"
+echo "Processing complete. Final results of the target catchment ${catchment} is saved in: ${catchment_dir}"
 

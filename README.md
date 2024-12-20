@@ -35,46 +35,55 @@ The tool is designed as a command line application and was developed on Ubuntu 2
 - **NCO**
 - **parallel**
 
-### Python Libraries
+### Python Dependencies
+The following Python libraries are required to run the `HMASR_postprocess.py` script:
 - `pandas`
 - `rasterio`
 - `xarray`
 - `numpy`
 - `matplotlib`
 - `argparse`
+- `scienceplots`
+
+Ensure these are installed in your Python environment before running the script.
 
 ## Usage
 
-1. Replace the example shapefile in the `shp` directory with your catchment's outline or specify the file path using the `--cutline_shp` option.
+1. Replace the example shapefile in the `shp` directory or specify the path to your shapefile using the `--cutline_shp` option.
 
 2. Run the Bash script with required arguments. Example:
 ```bash
-./process_hma_sr.sh --threads ALL_CPUS --catchment "Kyzylsuu" \
+./HMASR_swe_pipeline.sh --threads ALL_CPUS --catchment "Kyzylsuu" \
     --start_y 1999 --end_y 2016 --projEqArea "+proj=aea ..." \
     --cutline_shp "shp/Catchment_shapefile_new.shp" --SKIP_DOWNLOAD false \
-    --CLEANUP true
+    --CLEANUP true --modules "nco,anaconda" --output_fig "output/annual_swe.png"
 ```
 3. Feel free to use the `HMASR_postprocess.py` script as a basis for further analysis. If you plans go beyond mapping and aggregation you might want to set `--CLEANUP false` and use the intermediate `.ncdf` files instead of `.tif` for speed gains and metadata support.
 
 ## Options
 
 - `--threads`: Number of threads to use (default: ALL_CPUS).
-- `--catchment`: Name of the catchment (default: Kyzylsuu).
+- `--catchment`: Name of the catchment (default: Kyzylsuu_final).
 - `--start_y`: Start year for the analysis (default: 1999).
 - `--end_y`: End year for the analysis (default: 2016).
 - `--projEqArea`: Projection string (default: Albers Equal Area).
-- `--cutline_shp`: Path to the shapefile for cutline.
+- `--opt`: GDAL compression options (default: COMPRESS=DEFLATE).
+- `--cutline_shp`: Path to the shapefile for the cutline.
 - `--SKIP_DOWNLOAD`: Skip downloading data if already present (default: false).
 - `--CLEANUP`: Clean up intermediate files (default: true).
 - `--modules`: Comma-separated list of modules to load (default: `nco,anaconda`). Use an empty value to skip loading modules.
+- `--output_fig`: Path for saving annual SWE plots. If left blank, the script generates a plot named `<catchment>_annual_swe.png` in the same directory as the CSV output.
 
 ## Output
 
-Returns two outputs:
+Returns the following outputs:
 1. A directory named `processed` containing two types of `.tif` files.
-   - Annual ensemble mean SWE rasters for your catchment with one band per day in a 500m spatial resolution.
-   - Annual binary masks separating seasonal and non-seasonal snow.
-3. A `.csv` file with daily catchment-wide mean SWE values for the requested study period.
+   - Annual ensemble **mean SWE rasters** for your catchment with one band per day in a 500m spatial resolution.
+   - Annual **binary masks** separating seasonal and non-seasonal snow.
+2. A `.csv` file with **daily catchment-wide mean SWE** values for the requested study period.
+3. **Annual SWE Plot (Optional)**:
+   - A PNG figure visualizing the annual mean SWE for each year in the study period.
+   - Saved to the path specified by `--output_fig` or defaults to `<catchment>_annual_swe.png`.
 
 ## Notes
 
