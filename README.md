@@ -56,7 +56,7 @@ Ensure these are installed in your Python environment before running the script.
 ./HMASR_swe_pipeline.sh --threads ALL_CPUS --catchment "Kyzylsuu" \
     --start_y 1999 --end_y 2016 --projEqArea "+proj=aea ..." \
     --cutline_shp "shp/Catchment_shapefile_new.shp" --SKIP_DOWNLOAD false \
-    --CLEANUP true --modules "nco,anaconda" --output_fig "output/annual_swe.png"
+    --CLEANUP true --modules "nco,anaconda" --output_fig "/mean_swe.png"
 ```
 3. Feel free to use the `HMASR_postprocess.py` script as a basis for further analysis. If you plans go beyond mapping and aggregation you might want to set `--CLEANUP false` and use the intermediate `.ncdf` files instead of `.tif` for speed gains and metadata support.
 
@@ -72,7 +72,7 @@ Ensure these are installed in your Python environment before running the script.
 - `--SKIP_DOWNLOAD`: Skip downloading data if already present (default: false).
 - `--CLEANUP`: Clean up intermediate files (default: true).
 - `--modules`: Comma-separated list of modules to load (default: `nco,anaconda`). Use an empty value to skip loading modules.
-- `--output_fig`: Path for saving annual SWE plots. If left blank, the script generates a plot named `<catchment>_annual_swe.png` in the same directory as the CSV output.
+- `--output_fig`: Path for saving annual SWE plots. If left blank, the script generates a plot named `<catchment>_mean_swe.png` in the same directory as the CSV output.
 
 ## Output
 
@@ -82,8 +82,8 @@ Returns the following outputs:
    - Annual **binary masks** separating seasonal and non-seasonal snow.
 2. A `.csv` file with **daily catchment-wide mean SWE** values for the requested study period.
 3. **Annual SWE Plot (Optional)**:
-   - A PNG figure visualizing the annual mean SWE for each year in the study period.
-   - Saved to the path specified by `--output_fig` or defaults to `<catchment>_annual_swe.png`.
+   - A PNG figure visualizing the mean daily SWE for each year in the study period.
+   - Saved to the path specified by `--output_fig` or defaults to `<catchment>_mean_swe.png`.
 
 ## Notes
 

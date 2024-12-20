@@ -52,7 +52,7 @@
 #   --SKIP_DOWNLOAD   Skip data download (default: false)
 #   --CLEANUP         Clean up intermediate files (default: true)
 #   --modules         Comma-separated list of modules to load.  Use empty value to skip. (default: "nco,anaconda")
-#   --output_fig      Path for saving annual SWE plots. Default: <catchment>_annual_swe.png
+#   --output_fig      Path for saving mean daily SWE plots. Default: <catchment>_mean_swe.png
 #
 # Author: Phillip Schuster
 # Date: 2024-12-19
@@ -132,7 +132,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --SKIP_DOWNLOAD   Skip data download (default: false)"
             echo "  --CLEANUP         Clean up intermediate files (default: true)"
             echo "  --modules         List of modules to load (default: nco,anaconda). Use empty value to skip."
-            echo "  --output_fig      Path for saving annual SWE plots. Default: <catchment>_annual_swe.png"
+            echo "  --output_fig      Path for saving mean daily SWE plots. Default: <catchment>_mean_swe.png"
             echo
             exit 0
             ;;
@@ -146,7 +146,7 @@ done
 
 # Default output figure path if not specified
 if [[ -z "$output_fig" ]]; then
-    output_fig="${catchment}_annual_swe.png"
+    output_fig="${catchment}_mean_swe.png"
 fi
 
 # Load required modules if specified
@@ -270,7 +270,7 @@ done
 echo "Processing of .tif files complete. Processed files can be found in: ${processed_dir}"
 
 # Process GeoTIFF files and calculate SWE means
-python3 HMASR_postprocess.py \
+python HMASR_postprocess.py \
     --input_dir "${processed_dir}" \
     --output_csv "${catchment_dir}/${catchment}_mean_swe.csv" \
     --output_fig "${output_fig}" \

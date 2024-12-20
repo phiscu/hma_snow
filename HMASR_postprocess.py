@@ -176,7 +176,7 @@ def swe_means(input_dir, start_year=1999, end_year=2016):
 
 def plot_annual_swe(input_dir, start_year, end_year, output_file):
     """
-    Generate annual mean SWE plots for a range of years.
+    Generate mean daily SWE plots for a range of years.
 
     Parameters
     ----------
@@ -231,7 +231,7 @@ def plot_annual_swe(input_dir, start_year, end_year, output_file):
     cbar.set_label("SWE [mm]", fontsize=30)
     cbar.ax.tick_params(labelsize=20)
 
-    fig.suptitle("Annual Mean Snow Water Equivalent", fontsize=40, y=1.02)
+    fig.suptitle("Mean Daily Snow Water Equivalent", fontsize=40, y=1.05)
 
     for ax in axes[len(years):]:
         ax.remove()
@@ -239,6 +239,7 @@ def plot_annual_swe(input_dir, start_year, end_year, output_file):
     plt.savefig(output_file, dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"Annual SWE plots saved to {output_file}")
+
 
 def main():
     """
