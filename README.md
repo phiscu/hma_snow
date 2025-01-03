@@ -54,11 +54,11 @@ Ensure these are installed in your Python environment before running the script.
 2. Run the Bash script with required arguments. Example:
 ```bash
 ./HMASR_swe_pipeline.sh --threads ALL_CPUS --catchment "Kyzylsuu" \
-    --start_y 1999 --end_y 2016 --projEqArea "+proj=aea ..." \
+    --start_y 1999 --end_y 2016 --projEqArea "+proj=aea +lon_0=82.5 +lat_1=29.1666667 +lat_2=41.8333333 +lat_0=35.5 +datum=WGS84 +units=m +no_defs" \
     --cutline_shp "shp/Catchment_shapefile_new.shp" --SKIP_DOWNLOAD false \
     --CLEANUP true --modules "nco,anaconda" --output_fig "/mean_swe.png"
 ```
-3. Feel free to use the `HMASR_postprocess.py` script as a basis for further analysis. If you plans go beyond mapping and aggregation you might want to set `--CLEANUP false` and use the intermediate `.ncdf` files instead of `.tif` for speed gains and metadata support.
+3. Feel free to use the `HMASR_postprocess.py` script as a basis for further analysis. If your plans go beyond mapping and aggregation you might want to set `--CLEANUP false` and use the intermediate `.ncdf` files instead of `.tif` for speed gains and metadata support.
 
 ## Options
 
@@ -90,7 +90,7 @@ Returns the following outputs:
 - Temporary files may require significant disk space depending on the target area. Ensure sufficient storage is available during processing.
 - The temporal coverage of the dataset is 1999 to 2016.
 
-### Acknowledements
+## Acknowledements
 The reprojection and some parts of the workflow are adapted from **Simon Gascoin**'s [HMA-Snow-Reanalysis-scripts](https://github.com/sgascoin/HMA-Snow-Reanalysis-scripts) repository for his study on the Indus basin:
   - **Gascoin, S. (2021)** Snowmelt and Snow Sublimation in the Indus Basin. Water, 13(19), 2621. DOI: [10.3390/w13192621](https://doi.org/10.3390/w13192621)
   
