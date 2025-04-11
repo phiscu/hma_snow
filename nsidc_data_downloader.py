@@ -2,7 +2,7 @@
 # ----------------------------------------------------------------------------
 # NSIDC Data Download Script
 #
-# Copyright (c) 2024 Regents of the University of Colorado
+# Copyright (c) 2025 Regents of the University of Colorado
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -63,15 +63,18 @@ except ImportError:
 short_name = 'HMA_SR_D'
 version = '1'
 polygon = ''
-filename_filter=''
+filename_filter = ''
 url_list = []
 
 CMR_URL = 'https://cmr.earthdata.nasa.gov'
 URS_URL = 'https://urs.earthdata.nasa.gov'
 CMR_PAGE_SIZE = 2000
-CMR_FILE_URL = ('{0}/search/granules.json?provider=NSIDC_ECS'
+CMR_FILE_URL = ('{0}/search/granules.json?'
                 '&sort_key[]=start_date&sort_key[]=producer_granule_id'
-                '&scroll=true&page_size={1}'.format(CMR_URL, CMR_PAGE_SIZE))
+                '&page_size={1}'.format(CMR_URL, CMR_PAGE_SIZE))
+CMR_COLLECTIONS_URL = '{0}/search/collections.json?'.format(CMR_URL)
+# Maximum number of times to re-try downloading a file if something goes wrong.
+FILE_DOWNLOAD_MAX_RETRIES = 3
 
 
 def get_username():
@@ -162,22 +165,46 @@ def build_filename_filter(filename_filter):
     return result
 
 
-def build_cmr_query_url(short_name, version, time_start, time_end,
-                        bounding_box=None, polygon=None,
-                        filename_filter=None):
+def build_query_params_str(short_name, version, time_start='', time_end='',
+                           bounding_box=None, polygon=None,
+                           filename_filter=None, provider=None):
+    """Create the query params string for the given inputs.
+
+    E.g.,: '&short_name=ATL06&version=006&version=06&version=6'
+    """
     params = '&short_name={0}'.format(short_name)
     params += build_version_query_params(version)
-    params += '&temporal[]={0},{1}'.format(time_start, time_end)
+    if time_start or time_end:
+        # See
+        # https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#temporal-range-searches
+        params += '&temporal[]={0},{1}'.format(time_start, time_end)
     if polygon:
         params += '&polygon={0}'.format(polygon)
     elif bounding_box:
         params += '&bounding_box={0}'.format(bounding_box)
     if filename_filter:
         params += build_filename_filter(filename_filter)
+    if provider:
+        params += '&provider={0}'.format(provider)
 
-    url = CMR_FILE_URL + params
-    return url
+    return params
 
+
+def build_cmr_query_url(short_name, version, time_start, time_end,
+                        bounding_box=None, polygon=None,
+                        filename_filter=None, provider=None):
+    params = build_query_params_str(
+        short_name=short_name,
+        version=version,
+        time_start=time_start,
+        time_end=time_end,
+        bounding_box=bounding_box,
+        polygon=polygon,
+        filename_filter=filename_filter,
+        provider=provider,
+    )
+
+    return CMR_FILE_URL + params
 
 
 def get_speed(time_elapsed, chunk_size):
@@ -244,8 +271,9 @@ def get_login_response(url, credentials, token):
                 err += ': Check your bearer token'
             else:
                 err += ': Check your username and password'
-        print(err)
-        sys.exit(1)
+            print(err)
+            sys.exit(1)
+        raise
     except Exception as e:
         print('Error{0}: {1}'.format(type(e), str(e)))
         sys.exit(1)
@@ -275,36 +303,50 @@ def cmr_download(urls, force=False, quiet=False):
             print('{0}/{1}: {2}'.format(str(index).zfill(len(str(url_count))),
                                         url_count, filename))
 
-        try:
-            response = get_login_response(url, credentials, token)
-            length = int(response.headers['content-length'])
+        for download_attempt_number in range(1, FILE_DOWNLOAD_MAX_RETRIES + 1):
+            if not quiet and download_attempt_number > 1:
+                print('Retrying download of {0}'.format(url))
             try:
-                if not force and length == os.path.getsize(filename):
-                    if not quiet:
-                        print('  File exists, skipping')
-                    continue
-            except OSError:
-                pass
-            count = 0
-            chunk_size = min(max(length, 1), 1024 * 1024)
-            max_chunks = int(math.ceil(length / chunk_size))
-            time_initial = time.time()
-            with open(filename, 'wb') as out_file:
-                for data in cmr_read_in_chunks(response, chunk_size=chunk_size):
-                    out_file.write(data)
-                    if not quiet:
-                        count = count + 1
-                        time_elapsed = time.time() - time_initial
-                        download_speed = get_speed(time_elapsed, count * chunk_size)
-                        output_progress(count, max_chunks, status=download_speed)
-            if not quiet:
-                print()
-        except HTTPError as e:
-            print('HTTP error {0}, {1}'.format(e.code, e.reason))
-        except URLError as e:
-            print('URL error: {0}'.format(e.reason))
-        except IOError:
-            raise
+                response = get_login_response(url, credentials, token)
+                length = int(response.headers['content-length'])
+                try:
+                    if not force and length == os.path.getsize(filename):
+                        if not quiet:
+                            print('  File exists, skipping')
+                        # We have already downloaded the file. Break out of the
+                        # retry loop.
+                        break
+                except OSError:
+                    pass
+                count = 0
+                chunk_size = min(max(length, 1), 1024 * 1024)
+                max_chunks = int(math.ceil(length / chunk_size))
+                time_initial = time.time()
+                with open(filename, 'wb') as out_file:
+                    for data in cmr_read_in_chunks(response, chunk_size=chunk_size):
+                        out_file.write(data)
+                        if not quiet:
+                            count = count + 1
+                            time_elapsed = time.time() - time_initial
+                            download_speed = get_speed(time_elapsed, count * chunk_size)
+                            output_progress(count, max_chunks, status=download_speed)
+                if not quiet:
+                    print()
+                # If we get here, the download was successful and we can break
+                # out of the retry loop.
+                break
+            except HTTPError as e:
+                print('HTTP error {0}, {1}'.format(e.code, e.reason))
+            except URLError as e:
+                print('URL error: {0}'.format(e.reason))
+            except IOError:
+                raise
+
+            # If this happens, none of our attempts to download the file
+            # succeeded. Print an error message and raise an error.
+            if download_attempt_number == FILE_DOWNLOAD_MAX_RETRIES:
+                print('failed to download file {0}.'.format(filename))
+                sys.exit(1)
 
 
 def cmr_filter_urls(search_results):
@@ -338,6 +380,12 @@ def cmr_filter_urls(search_results):
             continue
 
         filename = link['href'].split('/')[-1]
+
+        if 'metadata#' in link['rel'] and filename.endswith('.dmrpp'):
+            # Exclude .dmrpp metadata links that exist in cloud-hosted
+            # collections
+            continue
+
         if filename in unique_filenames:
             # Exclude links with duplicate filenames (they would overwrite)
             continue
@@ -348,17 +396,66 @@ def cmr_filter_urls(search_results):
     return urls
 
 
+def check_provider_for_collection(short_name, version, provider):
+    """Return `True` if the collection is available for the given provider, otherwise `False`."""
+    query_params = build_query_params_str(short_name=short_name, version=version, provider=provider)
+    cmr_query_url = CMR_COLLECTIONS_URL + query_params
+
+    req = Request(cmr_query_url)
+    try:
+        # TODO: context w/ ssl stuff here?
+        response = urlopen(req)
+    except Exception as e:
+        print('Error: ' + str(e))
+        sys.exit(1)
+
+    search_page = response.read()
+    search_page = json.loads(search_page.decode('utf-8'))
+
+    if 'feed' not in search_page or 'entry' not in search_page['feed']:
+        return False
+
+    if len(search_page['feed']['entry']) > 0:
+        return True
+    else:
+        return False
+
+
+def get_provider_for_collection(short_name, version):
+    """Return the provider for the collection associated with the given short_name and version.
+
+    Cloud-hosted data (NSIDC_CPRD) is preferred, but some datasets are still
+    only available in ECS. Eventually all datasets will be hosted in the
+    cloud. ECS is planned to be decommissioned in July 2026.
+    """
+    cloud_provider = 'NSIDC_CPRD'
+    in_earthdata_cloud = check_provider_for_collection(short_name, version, cloud_provider)
+    if in_earthdata_cloud:
+        return cloud_provider
+
+    ecs_provider = 'NSIDC_ECS'
+    in_ecs = check_provider_for_collection(short_name, version, ecs_provider)
+    if in_ecs:
+        return ecs_provider
+
+    raise RuntimeError(
+        'Found no collection matching the given short_name ({0}) and version ({1})'.format(short_name, version)
+    )
+
+
 def cmr_search(short_name, version, time_start, time_end,
                bounding_box='', polygon='', filename_filter='', quiet=False):
     """Perform a scrolling CMR query for files matching input criteria."""
-    cmr_query_url = build_cmr_query_url(short_name=short_name, version=version,
+    provider = get_provider_for_collection(short_name=short_name, version=version)
+    cmr_query_url = build_cmr_query_url(provider=provider, short_name=short_name, version=version,
                                         time_start=time_start, time_end=time_end,
                                         bounding_box=bounding_box,
                                         polygon=polygon, filename_filter=filename_filter)
     if not quiet:
         print('Querying for data:\n\t{0}\n'.format(cmr_query_url))
 
-    cmr_scroll_id = None
+    cmr_paging_header = 'cmr-search-after'
+    cmr_page_id = None
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
@@ -367,23 +464,29 @@ def cmr_search(short_name, version, time_start, time_end,
     hits = 0
     while True:
         req = Request(cmr_query_url)
-        if cmr_scroll_id:
-            req.add_header('cmr-scroll-id', cmr_scroll_id)
+        if cmr_page_id:
+            req.add_header(cmr_paging_header, cmr_page_id)
         try:
             response = urlopen(req, context=ctx)
         except Exception as e:
             print('Error: ' + str(e))
             sys.exit(1)
-        if not cmr_scroll_id:
-            # Python 2 and 3 have different case for the http headers
-            headers = {k.lower(): v for k, v in dict(response.info()).items()}
-            cmr_scroll_id = headers['cmr-scroll-id']
+
+        # Python 2 and 3 have different case for the http headers
+        headers = {k.lower(): v for k, v in dict(response.info()).items()}
+        if not cmr_page_id:
+            # Number of hits is on the first result set, which will not have a
+            # page id.
             hits = int(headers['cmr-hits'])
             if not quiet:
                 if hits > 0:
                     print('Found {0} matches.'.format(hits))
                 else:
                     print('Found no matches.')
+
+        # If there are multiple pages, we'll get a new page ID on each request.
+        cmr_page_id = headers.get(cmr_paging_header)
+
         search_page = response.read()
         search_page = json.loads(search_page.decode('utf-8'))
         url_scroll_results = cmr_filter_urls(search_page)
@@ -408,19 +511,16 @@ def main(argv=None):
 
     force = False
     quiet = False
-    usage = ('usage: nsidc-download_***.py [--help, -h] [--force, -f] [--quiet, -q] '
+    usage = ('usage: nsidc-download.py [--help, -h] [--force, -f] [--quiet, -q] '
              '[--time_start=YYYY-MM-DDTHH:MM:SSZ] [--time_end=YYYY-MM-DDTHH:MM:SSZ] '
              '[--bounding_box=minX,minY,maxX,maxY]')
 
-    # Default values
-    time_start = ''
-    time_end = ''
-    bounding_box = ''
-
     try:
-        opts, args = getopt.getopt(argv, 'hfq', 
-                                   ['help', 'force', 'quiet', 
-                                    'time_start=', 'time_end=', 'bounding_box='])
+        opts, args = getopt.getopt(argv, 'hfq', [
+            'help', 'force', 'quiet',
+            'time_start=', 'time_end=',
+            'bounding_box=',
+        ])
         for opt, arg in opts:
             if opt in ('-f', '--force'):
                 force = True
@@ -439,16 +539,6 @@ def main(argv=None):
         print(e)
         print(usage)
         sys.exit(1)
-
-    # Check that required parameters are provided
-    if not time_start or not time_end or not bounding_box:
-        print("Error: --time_start, --time_end, and --bounding_box are required.")
-        print(usage)
-        sys.exit(1)
-
-    # Supply some default search parameters if needed
-    short_name = 'HMA_SR_D'
-    version = '1'
 
     try:
         if not url_list:
